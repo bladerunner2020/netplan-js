@@ -15,19 +15,7 @@ const mergeDeep = (...objects) => objects.reduce((prev, obj) => {
     const oVal = obj[key];
 
     if (Array.isArray(pVal) && Array.isArray(oVal)) {
-      const arr = [...prev[key]];
-      oVal.forEach((val) => {
-        if (typeof val !== 'object' && !pVal.includes(val)) {
-          arr.push(val);
-        } else {
-          const vv = JSON.stringify(val);
-          if (oVal.map((v) => JSON.stringify(v)).filter((v) => v === vv).length === 0) {
-            arr.push(val);
-          }
-        }
-      });
-      // prev[key] = pVal.concat(...oVal);
-      prev[key] = arr; // eslint-disable-line no-param-reassign
+      prev[key] = [...oVal]; // eslint-disable-line no-param-reassign
     } else if (isObject(pVal) && isObject(oVal)) {
       prev[key] = mergeDeep(pVal, oVal); // eslint-disable-line no-param-reassign
     } else {
@@ -178,7 +166,10 @@ class Netplan {
     return new Promise((resolve, reject) => {
       const result = {};
       const child = spawn('netplan', [test ? 'try' : 'apply']);
-      child.on('error', reject);
+      child.on('error', (err) => {
+        debug(`spawn failed: ${err.message}`);
+        reject(err);
+      });
 
       child.stdout.on('data', (data) => {
         debug(data);
