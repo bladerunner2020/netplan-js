@@ -4,6 +4,6 @@ network:
             dhcp4: true
             dhcp6: false
             match:
-                macaddress: d0:0d:17:7e:e6:5a
+                macaddress: dd:dd:dd:dd:dd:dd
             set-name: eth0
     version: 2

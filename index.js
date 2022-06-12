@@ -67,7 +67,9 @@ class Netplan {
    * load all configuration files
    */
   async loadConfigs() {
+    debug(`Loading netplan configurations from ${this.netplanPath}...`);
     const filenames = await getConfigFilenames(this.netplanPath);
+    if (debug.enabled) debug(`Config files: ${filenames.join(', ')}`);
     this.configFiles = filenames.sort();
     this.configs = {};
     this.plan = { network: {} };
@@ -78,6 +80,8 @@ class Netplan {
       this.configs[name] = res;
       this.plan = mergeDeep(this.plan, res);
     });
+
+    if (debug.enabled) debug(`Config: ${JSON.stringify(this.plan)}`);
   }
 
   /**
@@ -151,6 +155,8 @@ class Netplan {
     const filename = this.getFilenameByInterface(type, name) || this.getFilenameByInterface(type) || this.filenames[0];
     if (!filename) throw new Error('No configuration files');
 
+    debug(`setInterface type=${type}, name=${name}. config file: ${filename}`);
+
     this.changed.add(filename);
     this.configs[filename] = mergeDeep(this.configs[filename], {
       network: {
@@ -168,21 +174,25 @@ class Netplan {
    * @returns {Promise<object>} - promise that contains result stdin and stdout
    */
   apply(test = false) { // eslint-disable-line class-methods-use-this
+    debug(`execute: netplan ${test ? 'try' : 'apply'}`);
     return new Promise((resolve, reject) => {
       const result = {};
       const child = spawn('netplan', [test ? 'try' : 'apply']);
       child.on('error', reject);
 
       child.stdout.on('data', (data) => {
+        debug(data);
         result.stdout = data.toString('utf8').trim();
       });
 
       child.stderr.on('data', (data) => {
+        debug(data);
         result.stderr = data.toString('utf8').trim();
       });
 
       child.on('close', (code) => {
         result.code = code;
+        debug(`Finished with code: ${code}`);
         if (code !== 0) {
           const error = new Error(`netplan failed with code ${code}.`);
           error.stdout = result.stdout;

@@ -1,6 +1,6 @@
 {
   "name": "netplan-js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "author": "bladerunner2020 <pivovarov@gmail.com>",
   "scripts": {
