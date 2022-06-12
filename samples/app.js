@@ -28,4 +28,8 @@ netplan.loadConfigs().then(() => {
   console.log('new config:', JSON.stringify(netplan.getInterface('ethernets', 'ens33')));
 
   netplan.writeConfigs();
+
+  netplan.apply()
+    .then(() => console.log('done'))
+    .catch((err) => console.log(err.message));
 });

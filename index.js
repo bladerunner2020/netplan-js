@@ -1,8 +1,8 @@
 const debug = require('debug')('Netplan');
+const { spawn } = require('child_process');
 const { load: loadYaml, dump: dumpYaml } = require('js-yaml');
-const { join: pathJoin } = require('path');
 const {
-  readdir, existsSync, readFileSync, writeFileSync
+  readdir, readFileSync, writeFileSync
 } = require('fs');
 
 const NETPLAN_PATH = '/etc/netplan';
@@ -49,24 +49,6 @@ class Netplan {
     this.configs = {};
     this.configFiles = [];
     this.changed = new Set();
-
-    // Accommodate /sbin and /usr/sbin in path
-    const paths = new Set(process.env.PATH.split(':'));
-    paths.add('/sbin');
-    paths.add('/usr/sbin');
-
-    this.binary = null;
-    this.ipBinary = null;
-    this.routeBinary = null;
-
-    paths.forEach((item) => {
-      const binary = pathJoin(item, 'netplan');
-      const ipBinary = pathJoin(item, 'ip');
-      const routeBinary = pathJoin(item, 'route');
-      if (existsSync(binary)) this.binary = binary;
-      if (existsSync(ipBinary)) this.ipBinary = ipBinary;
-      if (existsSync(routeBinary)) this.routeBinary = routeBinary;
-    });
   }
 
   async loadConfigs() {
@@ -134,6 +116,35 @@ class Netplan {
       }
     });
     this.updatePlan();
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  apply() {
+    return new Promise((resolve, reject) => {
+      const result = {};
+      const child = spawn('netplan', ['apply']);
+      child.on('error', reject);
+
+      child.stdout.on('data', (data) => {
+        result.stdout = data.toString('utf8').trim();
+      });
+
+      child.stderr.on('data', (data) => {
+        result.stderr = data.toString('utf8').trim();
+      });
+
+      child.on('close', (code) => {
+        result.code = code;
+        if (code !== 0) {
+          const error = new Error(`netplan failed with code ${code}.`);
+          error.stdout = result.stdout;
+          error.stderr = result.stderr;
+          error.code = code;
+          return reject(error);
+        }
+        return resolve(result);
+      });
+    });
   }
 
   // Internal methods
