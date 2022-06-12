@@ -1,0 +1,23 @@
+{
+  "name": "netplan",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "bladerunner2020 <pivovarov@gmail.com>",
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.2",
+    "jest": "^24.8.0"
+  },
+  "dependencies": {
+    "debug": "^4.3.4",
+    "js-yaml": "^4.1.0"
+  }
+}
