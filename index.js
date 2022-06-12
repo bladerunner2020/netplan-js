@@ -51,6 +51,9 @@ class Netplan {
     this.changed = new Set();
   }
 
+  /**
+   * load all configuration files
+   */
   async loadConfigs() {
     const filenames = await getConfigFilenames(this.netplanPath);
     this.configFiles = filenames.sort();
@@ -65,6 +68,11 @@ class Netplan {
     });
   }
 
+  /**
+   * write changed configuration files
+   *
+   * @returns {Promise<number>} - number of files written
+   */
   writeConfigs() {
     return new Promise((resolve, reject) => {
       debug(`writeConfigs: writing ${this.changed.size} file(s).`);
@@ -83,26 +91,50 @@ class Netplan {
   }
 
   /**
+   * returns interfaces of specified type
    *
-   * @param {string} type - ethernets, wifis, bridges
-   * @returns {object}
+   * @param {string} [type='ethernets'] - ethernets, wifis, bridges
+   * @returns {object} - description of interfaces
    */
   getInterfaces(type = 'ethernets') {
     const { network = {} } = this.plan;
     return network[type];
   }
 
+  /**
+   * get names of interfaces of specified type
+   *
+   * @param {string} type - ethernets, wifis, bridges
+   * @returns {Array.string} - names of interfaces
+   */
   getInterfaceNames(type) {
     const ifaces = this.getInterfaces(type);
     if (typeof ifaces !== 'object') return null;
     return Object.keys(ifaces);
   }
 
+  /**
+   * get description of interface with specified type and name
+   *
+   * @param {string} type - ethernets, wifis, bridges
+   * @param {string} name - name of the interface
+   * @returns {object}
+   */
   getInterface(type, name) {
     const ifaces = this.getInterfaces(type);
     return typeof ifaces === 'object' ? ifaces[name] : null;
   }
 
+  /**
+   * find a configuration file that has description of interface and merge data to it
+   * if specified interface not found then it searches for file containing interfaces of specified type
+   * if not found uses the first configuration files
+   * NOTE: this method doesn't write to file - use writeConfigs
+   *
+   * @param {string} type - ethernets, wifis, bridges
+   * @param {string} name - name of the interface
+   * @param {object} data - descritpion of the interface to set
+   */
   setInterface(type, name, data) {
     const filename = this.getFilenameByInterface(type, name) || this.getFilenameByInterface(type) || this.filenames[0];
     if (!filename) throw new Error('No configuration files');
@@ -118,8 +150,11 @@ class Netplan {
     this.updatePlan();
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  apply() {
+  /**
+   * Execute netplan apply
+   * @returns {Promise<object>} - promise that contains result stdin and stdout
+   */
+  apply() { // eslint-disable-line class-methods-use-this
     return new Promise((resolve, reject) => {
       const result = {};
       const child = spawn('netplan', ['apply']);
@@ -147,7 +182,9 @@ class Netplan {
     });
   }
 
-  // Internal methods
+  /**
+   * Update plan after config files changed (called automatically)
+   */
   updatePlan() {
     this.plan = { network: {} };
     this.configFiles.forEach((name) => {
@@ -156,6 +193,13 @@ class Netplan {
     });
   }
 
+  /**
+   * searches for config file name that has interface with type and name
+   * starts from the end returns first matching filename
+   * @param {string} type - ethernets, wifis, bridges
+   * @param {name} name - name of the interface
+   * @returns {string} - filename or null if not found
+   */
   getFilenameByInterface(type, name) {
     const { configFiles, configs } = this;
     for (let i = configFiles.length - 1; i >= 0; i--) {

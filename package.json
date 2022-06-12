@@ -1,5 +1,5 @@
 {
-  "name": "netplan",
+  "name": "netplan-js",
   "version": "1.0.0",
   "main": "index.js",
   "author": "bladerunner2020 <pivovarov@gmail.com>",
