@@ -6,12 +6,10 @@ const netplan = new Netplan({
 });
 
 netplan.loadConfigs().then(() => {
-  console.log(netplan.getEthernetCount());
-
-  const config = netplan.getEthernetConfig('ens33');
+  const config = netplan.getInterface('ethernets', 'ens33');
   console.log('Current config:', JSON.stringify(config));
   if (config.dhcp4 || config.dhcp) {
-    netplan.setEthernet('ens33', {
+    netplan.setInterface('ethernets', 'ens33', {
       dhcp: undefined,
       dhcp4: false,
       addresses: ['192.168.1.105/24'],
@@ -19,7 +17,7 @@ netplan.loadConfigs().then(() => {
       gateway4: '192.168.1.1',
     });
   } else {
-    netplan.setEthernet('ens33', {
+    netplan.setInterface('ethernets', 'ens33', {
       dhcp4: true,
       addresses: undefined,
       nameservers: undefined,
@@ -27,7 +25,7 @@ netplan.loadConfigs().then(() => {
     });
   }
 
-  console.log('new config:', JSON.stringify(netplan.getEthernetConfig('ens33')));
+  console.log('new config:', JSON.stringify(netplan.getInterface('ethernets', 'ens33')));
 
   netplan.writeConfigs();
 });

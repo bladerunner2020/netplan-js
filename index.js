@@ -100,6 +100,43 @@ class Netplan {
     });
   }
 
+  /**
+   *
+   * @param {string} type - ethernets, wifis, bridges
+   * @returns {object}
+   */
+  getInterfaces(type = 'ethernets') {
+    const { network = {} } = this.plan;
+    return network[type];
+  }
+
+  getInterfaceNames(type) {
+    const ifaces = this.getInterfaces(type);
+    if (typeof ifaces !== 'object') return null;
+    return Object.keys(ifaces);
+  }
+
+  getInterface(type, name) {
+    const ifaces = this.getInterfaces(type);
+    return typeof ifaces === 'object' ? ifaces[name] : null;
+  }
+
+  setInterface(type, name, data) {
+    const filename = this.getFilenameByInterface(type, name) || this.getFilenameByInterface(type) || this.filenames[0];
+    if (!filename) throw new Error('No configuration files');
+
+    this.changed.add(filename);
+    this.configs[filename] = mergeDeep(this.configs[filename], {
+      network: {
+        [type]: {
+          [name]: data
+        }
+      }
+    });
+    this.updatePlan();
+  }
+
+  // Internal methods
   updatePlan() {
     this.plan = { network: {} };
     this.configFiles.forEach((name) => {
@@ -108,51 +145,19 @@ class Netplan {
     });
   }
 
-  getEthernets() {
-    const { ethernets = {} } = this.plan.network || {};
-    return ethernets;
-  }
-
-  getEthernetInterfaces() {
-    const { ethernets = {} } = this.plan.network || {};
-    return Object.keys(ethernets);
-  }
-
-  getEthernetCount() {
-    const { ethernets = {} } = this.plan.network || {};
-    return Object.keys(ethernets).length;
-  }
-
-  getEthernetConfig(iface) {
-    const { ethernets = {} } = this.plan.network || {};
-    return ethernets[iface] || null;
-  }
-
-  findEthernetInterface(iface) {
+  getFilenameByInterface(type, name) {
     const { configFiles, configs } = this;
     for (let i = configFiles.length - 1; i >= 0; i--) {
-      const name = configFiles[i];
-      const { network = {} } = configs[name] || {};
-      const { ethernets = {} } = network;
-      if (typeof ethernets[iface] === 'object') return name;
+      const filename = configFiles[i];
+      const { network = {} } = configs[filename] || {};
+      const ifaces = network[type];
+      if (typeof ifaces === 'object') {
+        if (typeof name === 'undefined') return filename;
+        if (typeof ifaces[name] === 'object') return filename;
+      }
     }
 
     return null;
-  }
-
-  setEthernet(iface, data) {
-    const name = this.findEthernetInterface(iface);
-    if (name) {
-      this.changed.add(name);
-      this.configs[name] = mergeDeep(this.configs[name], {
-        network: {
-          ethernets: {
-            [iface]: data
-          }
-        }
-      });
-      this.updatePlan();
-    }
   }
 }
 
