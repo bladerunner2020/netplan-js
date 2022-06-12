@@ -15,7 +15,19 @@ const mergeDeep = (...objects) => objects.reduce((prev, obj) => {
     const oVal = obj[key];
 
     if (Array.isArray(pVal) && Array.isArray(oVal)) {
-      prev[key] = pVal.concat(...oVal); // eslint-disable-line no-param-reassign
+      const arr = [...prev[key]];
+      oVal.forEach((val) => {
+        if (typeof val !== 'object' && !pVal.includes(val)) {
+          arr.push(val);
+        } else {
+          const vv = JSON.stringify(val);
+          if (oVal.map((v) => JSON.stringify(v)).filter((v) => v === vv).length === 0) {
+            arr.push(val);
+          }
+        }
+      });
+      // prev[key] = pVal.concat(...oVal);
+      prev[key] = arr; // eslint-disable-line no-param-reassign
     } else if (isObject(pVal) && isObject(oVal)) {
       prev[key] = mergeDeep(pVal, oVal); // eslint-disable-line no-param-reassign
     } else {
@@ -152,12 +164,13 @@ class Netplan {
 
   /**
    * Execute netplan apply
+   * @param {boolean} test - run netplan try
    * @returns {Promise<object>} - promise that contains result stdin and stdout
    */
-  apply() { // eslint-disable-line class-methods-use-this
+  apply(test = false) { // eslint-disable-line class-methods-use-this
     return new Promise((resolve, reject) => {
       const result = {};
-      const child = spawn('netplan', ['apply']);
+      const child = spawn('netplan', [test ? 'try' : 'apply']);
       child.on('error', reject);
 
       child.stdout.on('data', (data) => {
