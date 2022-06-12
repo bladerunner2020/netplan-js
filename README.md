@@ -33,7 +33,7 @@ netplan.loadConfigs().then(() => {
   netplan.setInterface('ethernets', 'ens33', {
     dhcp4: false,
     addresses: ['192.168.1.105/24'],
-    nameservers: ['192.168.1.1'],
+    nameservers: { addresses: ['192.168.1.1'] },
     gateway4: '192.168.1.1',
   });
   netplan.writeConfigs().then(() => {
